@@ -63,66 +63,72 @@
     </div>
 
     <script>
-        const datasets = {
+        function generateTimestampedData(parameterName, baseValue, variance, count) {
+            const endDate = new Date();
+            const data = [];
+            for (let i = count - 1; i >= 0; i--) {
+                const timestamp = new Date(endDate - i * 3600 * 1000); // 1 hour intervals
+                const value = baseValue + (Math.random() - 0.5) * variance;
+                data.push([timestamp.getTime(), parseFloat(value.toFixed(2))]);
+            }
+            return { name: parameterName, data: data };
+        }
+
+        const dummyData = {
             aqms: [
-                { name: "PM2.5 (µg/m³)", data: [], color: "#1A56DB", range: [0, 55] },
-                { name: "PM10 (µg/m³)", data: [], color: "#7E3BF2", range: [0, 110] },
-                { name: "CO (ppm)", data: [], color: "#047857", range: [0, 9] },
-                { name: "NO2 (ppb)", data: [], color: "#991B1B", range: [0, 100] }
+                generateTimestampedData("PM2.5 (µg/m³)", 25, 10, 168),
+                generateTimestampedData("PM10 (µg/m³)", 45, 15, 168),
+                generateTimestampedData("CO (ppm)", 1, 0.5, 168),
+                generateTimestampedData("NO2 (ppb)", 15, 8, 168)
             ],
             wqms: [
-                { name: "pH", data: [], color: "#2563EB", range: [6, 9] },
-                { name: "Dissolved Oxygen (mg/L)", data: [], color: "#7C3AED", range: [0, 14] },
-                { name: "Turbidity (NTU)", data: [], color: "#059669", range: [0, 20] },
-                { name: "Conductivity (µS/cm)", data: [], color: "#DC2626", range: [50, 1000] }
+                generateTimestampedData("pH", 7, 0.5, 168),
+                generateTimestampedData("Dissolved Oxygen (mg/L)", 6, 2, 168),
+                generateTimestampedData("Turbidity (NTU)", 3, 2, 168),
+                generateTimestampedData("Conductivity (µS/cm)", 50, 10, 168) // Adjusted base value and variance
             ],
             sqms: [
-                { name: "Soil Moisture (%)", data: [], color: "#3B82F6", range: [10, 50] },
-                { name: "Soil Temperature (°C)", data: [], color: "#8B5CF6", range: [0, 40] },
-                { name: "Soil pH", data: [], color: "#10B981", range: [4, 8] },
-                { name: "Nitrogen Content (mg/kg)", data: [], color: "#EF4444", range: [0, 60] }
+                generateTimestampedData("Soil Moisture (%)", 35, 10, 168),
+                generateTimestampedData("Soil Temperature (°C)", 22, 5, 168),
+                generateTimestampedData("Soil pH", 6.5, 0.5, 168),
+                generateTimestampedData("Nitrogen Content (mg/kg)", 20, 10, 168)
             ],
             gqms: [
-                { name: "CO2 (ppm)", data: [], color: "#60A5FA", range: [300, 1000] },
-                { name: "CH4 (ppm)", data: [], color: "#A78BFA", range: [0, 5] },
-                { name: "O2 (%)", data: [], color: "#34D399", range: [19, 21] },
-                { name: "H2S (ppb)", data: [], color: "#F87171", range: [0, 20] }
+                generateTimestampedData("CO2 (ppm)", 40, 5, 168), // Adjusted base value and variance
+                generateTimestampedData("CH4 (ppm)", 1.8, 0.5, 168),
+                generateTimestampedData("O2 (%)", 20.8, 0.5, 168),
+                generateTimestampedData("H2S (ppb)", 2, 3, 168)
             ]
         };
 
-        function generateRealisticData(hours, range) {
-            const now = new Date();
-            const data = [];
-            let lastValue = (range[0] + range[1]) / 2; // Start with the middle value
-            for (let i = hours - 1; i >= 0; i--) {
-                const time = new Date(now.getTime() - i * 60 * 60 * 1000);
-                // Generate a new value that's close to the last value, but within the range
-                let newValue = lastValue + (Math.random() - 0.5) * (range[1] - range[0]) * 0.1;
-                newValue = Math.max(range[0], Math.min(range[1], newValue)); // Ensure value is within range
-                data.push({
-                    x: time.toISOString(),
-                    y: parseFloat(newValue.toFixed(2))
-                });
-                lastValue = newValue;
-            }
-            return data;
-        }
-
-        function updateDatasets(hours) {
-            Object.keys(datasets).forEach(system => {
-                datasets[system].forEach(series => {
-                    series.data = generateRealisticData(hours, series.range);
-                });
-            });
+        function getDataForTimeRange(fullData, hours) {
+            const endTime = new Date().getTime();
+            const startTime = endTime - hours * 3600 * 1000;
+            return fullData.map(series => ({
+                ...series,
+                data: series.data.filter(point => point[0] >= startTime && point[0] <= endTime)
+            }));
         }
 
         function createChartOptions(selectedSystem, timeFilter) {
             let series;
             if (selectedSystem === 'all') {
-                series = Object.values(datasets).flat();
+                series = Object.values(dummyData).flat();
             } else {
-                series = datasets[selectedSystem];
+                series = dummyData[selectedSystem];
             }
+
+            let hours;
+            switch (timeFilter) {
+                case '7d': hours = 168; break;
+                case '3d': hours = 72; break;
+                case '24h': hours = 24; break;
+                case '12h': hours = 12; break;
+                case '3h': hours = 3; break;
+                default: hours = 168;
+            }
+
+            series = getDataForTimeRange(series, hours);
 
             return {
                 series: series,
@@ -167,7 +173,6 @@
                     title: {
                         text: 'Value'
                     },
-                    max: 115
                 },
                 tooltip: {
                     x: {
@@ -185,16 +190,6 @@
         function updateChart() {
             const selectedSystem = document.getElementById('system-selector').value;
             const timeFilter = document.getElementById('time-filter').value;
-            let hours;
-            switch (timeFilter) {
-                case '7d': hours = 168; break;
-                case '3d': hours = 72; break;
-                case '24h': hours = 24; break;
-                case '12h': hours = 12; break;
-                case '3h': hours = 3; break;
-                default: hours = 168;
-            }
-            updateDatasets(hours);
             const chartOptions = createChartOptions(selectedSystem, timeFilter);
             if (chart) {
                 chart.updateOptions(chartOptions);
