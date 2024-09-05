@@ -1,210 +1,224 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Environmental Monitoring Dashboard</title>
-    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            margin: 0;
-            padding: 20px;
-            background-color: #f8f9fa;
-        }
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background-color: #ffffff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-        }
-        h1 {
-            color: #333;
-            text-align: center;
-        }
-        .controls {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 20px;
-        }
-        select, #time-filter {
-            padding: 10px;
-            font-size: 16px;
-            border: 1px solid #ced4da;
-            border-radius: 4px;
-        }
-        #chart-container {
-            height: 500px;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>Environmental Monitoring Dashboard</h1>
-        <div class="controls">
-            <select id="system-selector">
-                <option value="all">All Systems</option>
-                <option value="aqms">Air Quality Monitoring System</option>
-                <option value="wqms">Water Quality Monitoring System</option>
-                <option value="sqms">Soil Quality Monitoring System</option>
-                <option value="gqms">Gas Quality Monitoring System</option>
-            </select>
-            <select id="time-filter">
-                <option value="7d">Last 7 Days</option>
-                <option value="3d">Last 3 Days</option>
-                <option value="24h">Last 24 Hours</option>
-                <option value="12h">Last 12 Hours</option>
-                <option value="3h">Last 3 Hours</option>
-            </select>
+<html lang="en" class="bg-gray-100">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Monitoring Dashboard</title>
+        <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link href="https://cdn.jsdelivr.net/npm/flowbite@2.5.1/dist/flowbite.min.css"
+              rel="stylesheet" />
+        <script src="https://cdn.jsdelivr.net/npm/flowbite@2.5.1/dist/flowbite.min.js"></script>
+    </head>
+    <body class="font-sans p-5">
+        <div class="max-w-7xl mx-auto bg-white p-6 rounded-lg shadow-md">
+            <div class="flex justify-between">
+                <div>
+                    <h5 class="leading-none text-3xl font-bold text-gray-900pb-2">Monitoring</h5>
+                    <p class="text-base font-normal text-gray-500">Laporan grafik semua stasiun</p>
+                </div>
+                <div class="flex justify-between mb-6">
+                    <select id="system-selector"
+                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5">
+                        <option value="all">All Systems</option>
+                        <option value="aqms">Air Quality Monitoring System</option>
+                        <option value="wqms">Water Quality Monitoring System</option>
+                        <option value="sqms">Soil Quality Monitoring System</option>
+                        <option value="gqms">Gas Quality Monitoring System</option>
+                    </select>
+                </div>
+            </div>
+            <div id="chart-container" class="h-[500px]"></div>
+            <div class="flex justify-between items-center pt-5">
+                <button id="dropdownDefaultButton"
+                        data-dropdown-toggle="timeFilterDropdown"
+                        class="text-sm font-medium text-gray-500 hover:text-gray-900 text-center inline-flex items-center"
+                        type="button">
+                    Last 7 days
+                    <svg class="w-2.5 m-2.5 ms-1.5"
+                         aria-hidden="true"
+                         xmlns="http://www.w3.org/2000/svg"
+                         fill="none"
+                         viewBox="0 0 10 6">
+                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4" />
+                    </svg>
+                </button>
+                <div id="timeFilterDropdown"
+                     class="z-10 hidden bg-white divide-y divide-gray-100 rounded-lg shadow w-44">
+                    <ul class="py-2 text-sm text-gray-700"
+                        aria-labelledby="dropdownDefaultButton">
+                        <li>
+                            <a href="#" class="block px-4 py-2 hover:bg-gray-100" data-value="7d">Last 7 days</a>
+                        </li>
+                        <li>
+                            <a href="#" class="block px-4 py-2 hover:bg-gray-100" data-value="3d">Last 3 days</a>
+                        </li>
+                        <li>
+                            <a href="#" class="block px-4 py-2 hover:bg-gray-100" data-value="24h">Last 24 hours</a>
+                        </li>
+                        <li>
+                            <a href="#" class="block px-4 py-2 hover:bg-gray-100" data-value="12h">Last 12 hours</a>
+                        </li>
+                        <li>
+                            <a href="#" class="block px-4 py-2 hover:bg-gray-100" data-value="3h">Last 3 hours</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
         </div>
-        <div id="chart-container"></div>
-    </div>
-
-    <script>
-        function generateTimestampedData(parameterName, baseValue, variance, count) {
-            const endDate = new Date();
-            const data = [];
-            for (let i = count - 1; i >= 0; i--) {
-                const timestamp = new Date(endDate - i * 3600 * 1000); // 1 hour intervals
-                const value = baseValue + (Math.random() - 0.5) * variance;
-                data.push([timestamp.getTime(), parseFloat(value.toFixed(2))]);
-            }
-            return { name: parameterName, data: data };
-        }
-
-        const dummyData = {
-            aqms: [
-                generateTimestampedData("PM2.5 (µg/m³)", 25, 10, 168),
-                generateTimestampedData("PM10 (µg/m³)", 45, 15, 168),
-                generateTimestampedData("CO (ppm)", 1, 0.5, 168),
-                generateTimestampedData("NO2 (ppb)", 15, 8, 168)
-            ],
-            wqms: [
-                generateTimestampedData("pH", 7, 0.5, 168),
-                generateTimestampedData("Dissolved Oxygen (mg/L)", 6, 2, 168),
-                generateTimestampedData("Turbidity (NTU)", 3, 2, 168),
-                generateTimestampedData("Conductivity (µS/cm)", 50, 10, 168) // Adjusted base value and variance
-            ],
-            sqms: [
-                generateTimestampedData("Soil Moisture (%)", 35, 10, 168),
-                generateTimestampedData("Soil Temperature (°C)", 22, 5, 168),
-                generateTimestampedData("Soil pH", 6.5, 0.5, 168),
-                generateTimestampedData("Nitrogen Content (mg/kg)", 20, 10, 168)
-            ],
-            gqms: [
-                generateTimestampedData("CO2 (ppm)", 40, 5, 168), // Adjusted base value and variance
-                generateTimestampedData("CH4 (ppm)", 1.8, 0.5, 168),
-                generateTimestampedData("O2 (%)", 20.8, 0.5, 168),
-                generateTimestampedData("H2S (ppb)", 2, 3, 168)
-            ]
-        };
-
-        function getDataForTimeRange(fullData, hours) {
-            const endTime = new Date().getTime();
-            const startTime = endTime - hours * 3600 * 1000;
-            return fullData.map(series => ({
-                ...series,
-                data: series.data.filter(point => point[0] >= startTime && point[0] <= endTime)
-            }));
-        }
-
-        function createChartOptions(selectedSystem, timeFilter) {
-            let series;
-            if (selectedSystem === 'all') {
-                series = Object.values(dummyData).flat();
-            } else {
-                series = dummyData[selectedSystem];
+        <script>
+            function generateTimestampedData(parameterName, baseValue, variance, count) {
+                const endDate = new Date();
+                const data = [];
+                for (let i = count - 1; i >= 0; i--) {
+                    const timestamp = new Date(endDate - i * 3600 * 1000); // 1 hour intervals
+                    const value = baseValue + (Math.random() - 0.5) * variance;
+                    data.push([timestamp.getTime(), parseFloat(value.toFixed(2))]);
+                }
+                return { name: parameterName, data: data };
             }
 
-            let hours;
-            switch (timeFilter) {
-                case '7d': hours = 168; break;
-                case '3d': hours = 72; break;
-                case '24h': hours = 24; break;
-                case '12h': hours = 12; break;
-                case '3h': hours = 3; break;
-                default: hours = 168;
+            const dummyData = {
+                aqms: [
+                    generateTimestampedData("PM2.5 (µg/m³)", 25, 10, 168),
+                    generateTimestampedData("PM10 (µg/m³)", 45, 15, 168),
+                    generateTimestampedData("CO (ppm)", 1, 0.5, 168),
+                    generateTimestampedData("NO2 (ppb)", 15, 8, 168)
+                ],
+                wqms: [
+                    generateTimestampedData("pH", 7, 0.5, 168),
+                    generateTimestampedData("Dissolved Oxygen (mg/L)", 6, 2, 168),
+                    generateTimestampedData("Turbidity (NTU)", 3, 2, 168),
+                    generateTimestampedData("Conductivity (µS/cm)", 50, 10, 168)
+                ],
+                sqms: [
+                    generateTimestampedData("Soil Moisture (%)", 35, 10, 168),
+                    generateTimestampedData("Soil Temperature (°C)", 22, 5, 168),
+                    generateTimestampedData("Soil pH", 6.5, 0.5, 168),
+                    generateTimestampedData("Nitrogen Content (mg/kg)", 20, 10, 168)
+                ],
+                gqms: [
+                    generateTimestampedData("CO2 (ppm)", 40, 5, 168),
+                    generateTimestampedData("CH4 (ppm)", 1.8, 0.5, 168),
+                    generateTimestampedData("O2 (%)", 20.8, 0.5, 168),
+                    generateTimestampedData("H2S (ppb)", 2, 3, 168)
+                ]
+            };
+
+            function getDataForTimeRange(fullData, hours) {
+                const endTime = new Date().getTime();
+                const startTime = endTime - hours * 3600 * 1000;
+                return fullData.map(series => ({
+                    ...series,
+                    data: series.data.filter(point => point[0] >= startTime && point[0] <= endTime)
+                }));
             }
 
-            series = getDataForTimeRange(series, hours);
+            function createChartOptions(selectedSystem, timeFilter) {
+                let series;
+                if (selectedSystem === 'all') {
+                    series = Object.values(dummyData).flat();
+                } else {
+                    series = dummyData[selectedSystem];
+                }
 
-            return {
-                series: series,
-                chart: {
-                    height: 500,
-                    type: 'line',
-                    zoom: {
+                let hours;
+                switch (timeFilter) {
+                    case '7d': hours = 168; break;
+                    case '3d': hours = 72; break;
+                    case '24h': hours = 24; break;
+                    case '12h': hours = 12; break;
+                    case '3h': hours = 3; break;
+                    default: hours = 168;
+                }
+
+                series = getDataForTimeRange(series, hours);
+
+                return {
+                    series: series,
+                    chart: {
+                        height: 500,
+                        type: 'line',
+                        zoom: {
+                            enabled: false
+                        },
+                        toolbar: {
+                            show: false
+                        }
+                    },
+                    dataLabels: {
                         enabled: false
                     },
-                    toolbar: {
-                        show: false
-                    }
-                },
-                dataLabels: {
-                    enabled: false
-                },
-                stroke: {
-                    width: 2,
-                    curve: 'smooth'
-                },
-                title: {
-                    text: 'Environmental Monitoring Data',
-                    align: 'left'
-                },
-                legend: {
-                    position: 'top',
-                    horizontalAlign: 'left',
-                    fontSize: '12px',
-                    fontWeight: 500,
-                    fontFamily: 'Inter, sans-serif',
-                },
-                markers: {
-                    size: 0,
-                    hover: {
-                        sizeOffset: 6
-                    }
-                },
-                xaxis: {
-                    type: 'datetime',
-                },
-                yaxis: {
-                    title: {
-                        text: 'Value'
+                    stroke: {
+                        width: 2,
+                        curve: 'smooth'
                     },
-                },
-                tooltip: {
-                    x: {
-                        format: 'dd MMM yyyy HH:mm'
-                    }
-                },
-                grid: {
-                    borderColor: '#e7e7e7',
-                },
-            };
-        }
-
-        let chart;
-
-        function updateChart() {
-            const selectedSystem = document.getElementById('system-selector').value;
-            const timeFilter = document.getElementById('time-filter').value;
-            const chartOptions = createChartOptions(selectedSystem, timeFilter);
-            if (chart) {
-                chart.updateOptions(chartOptions);
-            } else {
-                chart = new ApexCharts(document.querySelector("#chart-container"), chartOptions);
-                chart.render();
+                    legend: {
+                        position: 'top',
+                        horizontalAlign: 'left',
+                        fontSize: '12px',
+                        fontWeight: 500,
+                        fontFamily: 'Inter, sans-serif',
+                    },
+                    markers: {
+                        size: 0,
+                        hover: {
+                            sizeOffset: 6
+                        }
+                    },
+                    xaxis: {
+                        type: 'datetime',
+                    },
+                    yaxis: {
+                        title: {
+                            text: 'Value'
+                        },
+                    },
+                    tooltip: {
+                        x: {
+                            format: 'dd MMM yyyy HH:mm'
+                        }
+                    },
+                    grid: {
+                        show: true,
+                        strokeDashArray: 4,
+                        padding: {
+                            top: 20
+                        },
+                    },
+                };
             }
-        }
 
-        document.addEventListener("DOMContentLoaded", function() {
-            updateChart();
+            let chart;
+            let currentTimeFilter = '7d';
 
-            document.getElementById('system-selector').addEventListener('change', updateChart);
-            document.getElementById('time-filter').addEventListener('change', updateChart);
-        });
-    </script>
-</body>
+            function updateChart() {
+                const selectedSystem = document.getElementById('system-selector').value;
+                const chartOptions = createChartOptions(selectedSystem, currentTimeFilter);
+                if (chart) {
+                    chart.updateOptions(chartOptions);
+                } else {
+                    chart = new ApexCharts(document.querySelector("#chart-container"), chartOptions);
+                    chart.render();
+                }
+            }
+
+            document.addEventListener("DOMContentLoaded", function () {
+                updateChart();
+
+                document.getElementById('system-selector').addEventListener('change', updateChart);
+
+                // Set up event listeners for time filter dropdown items
+                const dropdownItems = document.querySelectorAll('#timeFilterDropdown a');
+                dropdownItems.forEach(item => {
+                    item.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        currentTimeFilter = this.getAttribute('data-value');
+                        document.getElementById('dropdownDefaultButton').textContent = this.textContent;
+                        updateChart();
+                    });
+                });
+            });
+        </script>
+    </body>
 </html>
